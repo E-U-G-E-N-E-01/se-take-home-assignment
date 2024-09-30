@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #f4f4f4; 
+            color: #333;
+        }
+        .container {
+            max-width: 600px; 
+            margin: 50px auto; 
+            padding: 20px; 
+            background-color: white; 
+            border-radius: 5px; 
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #FFC72C; 
+            text-align: center; 
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #d95300; 
+            margin: 10px 0;
+        }
+        h3 {
+            color: #FF5733; 
+            margin: 10px 0;
+        }
+        button {
+            width: 100%; 
+            padding: 10px; 
+            background-color: #FFC72C; 
+            border: none; 
+            border-radius: 5px; 
+            font-size: 16px; 
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #ffb300; /* Darker shade for hover */
+        }
+        .order-details {
+            margin-top: 15px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+            padding: 15px;
+            background-color: #fff7c1; /* Light yellow background */
+        }
+        .order-item {
+            display: flex; 
+            justify-content: space-between; 
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Order Confirmation</h1>
+        <div id="orderDetails" class="order-details"></div>
+        <button onclick="goBack()">Back to Log In</button>
+    </div>
+
+    <script>
+        // Fetch the pending orders
+        const pendingOrders = JSON.parse(localStorage.getItem('pendingOrders')) || [];
+        const latestOrder = pendingOrders[pendingOrders.length - 1]; // Get the most recent order
+
+        if (latestOrder) {
+            let orderDetailsDiv = document.getElementById('orderDetails');
+            orderDetailsDiv.innerHTML = `<h2>Order ID: ${latestOrder.orderId}</h2><p>Status: ${latestOrder.status}</p>`;
+            orderDetailsDiv.innerHTML += `<h3>Items:</h3>`;
+            latestOrder.items.forEach(item => {
+                orderDetailsDiv.innerHTML += `
+                    <div class="order-item">
+                        <span>${item.name} (Qty: ${item.quantity})</span>
+                        <span>RM${(item.price * item.quantity).toFixed(2)}</span>
+                    </div>`;
+            });
+            orderDetailsDiv.innerHTML += `<h3>Total Amount: RM${latestOrder.totalAmount.toFixed(2)}</h3>`;
+        } else {
+            document.getElementById('orderDetails').innerText = "No orders found.";
+        }
+
+        function goBack() {
+            window.location.href = 'Login.html'; // Redirect back to the menu
+        }
+    </script>
+
+</body>
+</html>

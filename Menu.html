@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>McDonald's Menu - Add to Cart</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .container { display: flex; justify-content: space-between; }
+        .sidebar { width: 250px; background-color: #FFC72C; padding: 20px; height: auto; }
+        .sidebar h2 { color: #DA291C; text-align: center; }
+        .sidebar ul { list-style: none; padding: 0; }
+        .sidebar ul li { margin: 15px 0; }
+        .sidebar ul li a { text-decoration: none; color: #DA291C; font-size: 18px; }
+        .main-content { flex-grow: 1; padding: 20px; }
+        .menu-category { display: flex; flex-wrap: wrap; }
+        .menu-item { width: 200px; padding: 20px; background-color: white; border: 1px solid #ddd; margin: 10px; text-align: center; }
+        .menu-item button { padding: 10px; background-color: #DA291C; color: white; border: none; cursor: pointer; }
+        .cart-container { width: 300px; padding: 20px; background-color: white; margin-left: 20px; }
+        .total { font-weight: bold; margin-top: 20px; }
+        .proceed-button { padding: 10px; background-color: #28a745; color: white; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="sidebar">
+            <h2>Menu</h2>
+            <ul>
+                <li><a href="#burgers">Burgers</a></li>
+                <li><a href="#fries">Fries</a></li>
+                <li><a href="#drinks">Drinks</a></li>
+                <li><a href="#desserts">Desserts</a></li>
+            </ul>
+        </div>
+
+        <div class="main-content">
+            <h1 id="burgers">Burgers</h1>
+            <div class="menu-category">
+                <div class="menu-item">
+                    <h3>Big Mac</h3>
+                    <p>RM5.99</p>
+                    <input type="number" value="1" min="1" id="qtyBigMac" />
+                    <button onclick="addToCart('Big Mac', 5.99, document.getElementById('qtyBigMac').value)">Add to Cart</button>
+                </div>
+            </div>
+
+            <h1 id="fries">Fries</h1>
+            <div class="menu-category">
+                <div class="menu-item">
+                    <h3>Large Fries</h3>
+                    <p>RM2.49</p>
+                    <input type="number" value="1" min="1" id="qtyLargeFries" />
+                    <button onclick="addToCart('Large Fries', 2.49, document.getElementById('qtyLargeFries').value)">Add to Cart</button>
+                </div>
+            </div>
+
+            <h1 id="drinks">Drinks</h1>
+            <div class="menu-category">
+                <div class="menu-item">
+                    <h3>Coca-Cola</h3>
+                    <p>$RM1.99</p>
+                    <input type="number" value="1" min="1" id="qtyCocaCola" />
+                    <button onclick="addToCart('Coca-Cola', 1.99, document.getElementById('qtyCocaCola').value)">Add to Cart</button>
+                </div>
+            </div>
+
+            <h1 id="desserts">Desserts</h1>
+            <div class="menu-category">
+                <div class="menu-item">
+                    <h3>Apple Pie</h3>
+                    <p>$RM1.99</p>
+                    <input type="number" value="1" min="1" id="qtyApplePie" />
+                    <button onclick="addToCart('Apple Pie', 1.99, document.getElementById('qtyApplePie').value)">Add to Cart</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="cart-container" id="cartContainer">
+            <h2>Cart</h2>
+            <div id="cartItems"></div>
+            <p class="total" id="totalPrice">Total: RM0.00</p>
+            <button class="proceed-button" id="proceedButton" onclick="proceedToPayment()">Proceed to Payment</button>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const userType = urlParams.get('userType');  // Get user type from the URL
+    
+        let cart = [];
+
+        function addToCart(itemName, price, quantity) {
+            // Convert quantity to a number
+            quantity = parseInt(quantity);
+            const existingItem = cart.find(item => item.name === itemName);
+            if (existingItem) {
+                existingItem.quantity += quantity; // Update existing item quantity
+            } else {
+                cart.push({ name: itemName, price: price, quantity: quantity });
+            }
+            updateCart();
+        }
+    
+        function updateCart() {
+            const cartItemsDiv = document.getElementById('cartItems');
+            cartItemsDiv.innerHTML = '';
+            let total = 0;
+
+            cart.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.innerHTML = `<p>${item.name} - RM${item.price.toFixed(2)} x ${item.quantity}</p>`;
+                cartItemsDiv.appendChild(itemDiv);
+                total += item.price * item.quantity; // Calculate total based on quantity
+            });
+    
+            document.getElementById('totalPrice').innerText = `Total: RM${total.toFixed(2)}`;
+        }
+    
+        function proceedToPayment() {
+            if (cart.length === 0) {
+                alert("Please add items to your cart before proceeding.");
+                return;
+            }
+    
+            // Store the cart and order type in local storage
+            localStorage.setItem("cart", JSON.stringify(cart)); 
+            localStorage.setItem("orderType", userType);  // Store the order type (Normal/VIP)
+            window.location.href = "payment.html"; // Navigate to payment page
+        }
+    </script>
+
+</body>
+</html>

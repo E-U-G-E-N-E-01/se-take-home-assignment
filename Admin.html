@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Orders</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #f4f4f4; 
+        }
+        .container { 
+            max-width: 800px; 
+            margin: 50px auto; 
+            padding: 20px; 
+            background-color: white; 
+            border-radius: 5px; 
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); 
+        }
+        h1 {
+            color: #FFC72C; 
+            text-align: center; 
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #d95300; 
+            margin-top: 30px;
+            border-bottom: 2px solid #FFC72C; 
+            padding-bottom: 10px; 
+        }
+        .order { 
+            background-color: #fff7c1; 
+            border: 1px solid #ddd; 
+            padding: 15px; 
+            margin-bottom: 15px; 
+            border-radius: 5px; 
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+        .order h3 {
+            color: #FF5733; 
+            margin-bottom: 10px;
+        }
+        .order ul {
+            list-style-type: none; 
+            padding: 0;
+        }
+        .order ul li {
+            background: #fff; 
+            margin: 5px 0; 
+            padding: 5px; 
+            border-radius: 3px; 
+            border: 1px solid #ddd;
+        }
+        .bots { 
+            margin-top: 20px; 
+            display: flex; 
+            justify-content: space-between; 
+        }
+        button { 
+            padding: 10px 15px; 
+            background-color: #FFC72C; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover { 
+            background-color: #ffb300; /* Darker shade for hover */
+        }
+        .bot-count { 
+            margin-top: 20px; 
+            font-weight: bold; 
+            text-align: center; 
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Admin Orders</h1>
+        <div class="bots">
+            <button onclick="addBot()">+ Bot</button>
+            <button onclick="removeBot()">- Bot</button>
+        </div>
+        
+        <!-- Display Total Bots -->
+        <div class="bot-count" id="botCount">Total Bots Available: 0</div>
+
+        <h2>Pending Orders</h2>
+        <div id="pendingOrdersContainer"></div>
+
+        <h2>Completed Orders</h2>
+        <div id="completedOrdersContainer"></div>
+    </div>
+
+    <script>
+        let bots = 0;
+        let pendingOrders = JSON.parse(localStorage.getItem('pendingOrders')) || [];
+        let processingBots = [];
+        let completedOrders = [];
+
+        // Function to display pending and completed orders
+        function displayOrders() {
+            const pendingContainer = document.getElementById('pendingOrdersContainer');
+            const completedContainer = document.getElementById('completedOrdersContainer');
+            pendingContainer.innerHTML = '';
+            completedContainer.innerHTML = '';
+
+            // Sort orders so that VIP orders come before Normal ones
+            const sortedPendingOrders = pendingOrders.sort((a, b) => {
+                if (a.orderType === 'VIP' && b.orderType === 'Normal') return -1;
+                if (a.orderType === 'Normal' && b.orderType === 'VIP') return 1;
+                return 0;
+            });
+
+            // Display pending orders
+            if (sortedPendingOrders.length === 0) {
+                pendingContainer.innerHTML = '<p>No pending orders.</p>';
+            } else {
+                sortedPendingOrders.forEach(order => {
+                    const orderDiv = document.createElement('div');
+                    orderDiv.className = 'order';
+                    orderDiv.innerHTML = `
+                        <h3>Order ID: ${order.orderId} (${order.orderType})</h3>
+                        <p>Total: RM${order.totalAmount}</p>
+                        <h4>Items:</h4>
+                        <ul>
+                            ${order.items.map(item => `<li>${item.name} - Quantity: ${item.quantity}</li>`).join('')}
+                        </ul>`;
+                    pendingContainer.appendChild(orderDiv);
+                });
+            }
+
+            // Display completed orders
+            if (completedOrders.length === 0) {
+                completedContainer.innerHTML = '<p>No completed orders.</p>';
+            } else {
+                completedOrders.forEach(order => {
+                    const orderDiv = document.createElement('div');
+                    orderDiv.className = 'order';
+                    orderDiv.innerHTML = `
+                        <h3>Order ID: ${order.orderId} (${order.orderType}) - COMPLETED</h3>
+                        <p>Total: RM${order.totalAmount}</p>
+                        <h4>Items:</h4>
+                        <ul>
+                            ${order.items.map(item => `<li>${item.name} - Quantity: ${item.quantity}</li>`).join('')}
+                        </ul>`;
+                    completedContainer.appendChild(orderDiv);
+                });
+            }
+
+            // Update bot count display
+            updateBotCount();
+        }
+
+        // Function to create an order with random details
+        function createOrder(type) {
+            return {
+                orderId: Date.now(),
+                orderType: type,
+                totalAmount: (Math.random() * 50).toFixed(2),  // Random total for demonstration
+                items: [
+                    { name: 'Burger', quantity: Math.floor(Math.random() * 3) + 1 },
+                    { name: 'Fries', quantity: Math.floor(Math.random() * 3) + 1 }
+                ]
+            };
+        }
+
+        // Add a new bot and start processing orders
+        function addBot() {
+            bots++;
+            processNextOrder();  // Start processing as soon as a bot is added
+            displayOrders();
+        }
+
+        // Remove the latest bot
+        function removeBot() {
+            if (bots > 0) {
+                bots--;
+
+                // If any bot is processing an order, stop the latest one and move the order back to pending
+                const lastBot = processingBots.pop();
+                if (lastBot) {
+                    pendingOrders.unshift(lastBot.order);
+                }
+            }
+            displayOrders();
+        }
+
+        // Process the next pending order
+        function processNextOrder() {
+            if (pendingOrders.length > 0 && bots > 0) {
+                const order = pendingOrders.shift();  // Get the next order from pending
+                const botId = processingBots.length + 1;  // Assign a bot ID
+                processingBots.push({ botId: botId, order: order, timeRemaining: 10 });  // Add the bot to processing
+
+                displayOrders();  // Update UI
+
+                // Start countdown timer
+                let countdown = 10;
+                const countdownInterval = setInterval(() => {
+                    countdown--;
+                    updateCountdownDisplay(botId, countdown);
+                    if (countdown <= 0) {
+                        clearInterval(countdownInterval);
+                        completeOrder(botId, order.orderId);
+                    }
+                }, 1000);  // Update every second
+            }
+        }
+
+        // Update the countdown display for each bot
+        function updateCountdownDisplay(botId, timeRemaining) {
+            const pendingContainer = document.getElementById('pendingOrdersContainer');
+            const orders = pendingContainer.getElementsByClassName('order');
+
+            // Find the correct order to update based on botId
+            for (let order of orders) {
+                if (order.innerHTML.includes(`Order ID: ${processingBots[botId - 1].order.orderId}`)) {
+                    order.innerHTML += `<p>Time remaining: ${timeRemaining} seconds</p>`;
+                    break;
+                }
+            }
+        }
+
+        // Mark the order as completed and free the bot
+        function completeOrder(botId, orderId) {
+            const botIndex = processingBots.findIndex(bot => bot.botId === botId);
+            if (botIndex !== -1) {
+                const completedOrder = processingBots[botIndex].order;
+                completedOrders.push(completedOrder);  // Move to completed
+                processingBots.splice(botIndex, 1);  // Remove from bots
+
+                console.log(`Order ${orderId} completed by Bot ${botId}`);
+            }
+
+            processNextOrder();  // Move to the next order
+            displayOrders();  // Update UI
+            updateLocalStorage();  // Save pending orders to localStorage
+        }
+
+        // Update localStorage with pending orders
+        function updateLocalStorage() {
+            localStorage.setItem('pendingOrders', JSON.stringify(pendingOrders));
+        }
+
+        // Update the display for the total number of bots
+        function updateBotCount() {
+            const botCountDisplay = document.getElementById('botCount');
+            botCountDisplay.textContent = `Total Bots Available: ${bots}`;
+        }
+
+        // Initial display on page load
+        displayOrders();
+    </script>
+
+</body>
+</html>
